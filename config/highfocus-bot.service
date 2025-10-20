@@ -1,0 +1,22 @@
+[Unit]
+Description=High Focus Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=%USERNAME%
+Group=%USERNAME%
+WorkingDirectory=%PROJECT_PATH%
+Environment="PATH=%PROJECT_PATH%/venv/bin"
+ExecStart=%PROJECT_PATH%/venv/bin/python %PROJECT_PATH%/bot.py
+Restart=always
+RestartSec=10
+
+# Логирование
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=highfocus-bot
+
+[Install]
+WantedBy=multi-user.target
+

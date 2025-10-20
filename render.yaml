@@ -1,0 +1,12 @@
+services:
+  - type: worker
+    name: highfocus-bot
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    autoDeploy: true
+

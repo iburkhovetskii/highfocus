@@ -1,0 +1,27 @@
+# Environment
+.env
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database
+*.db
+*.db-journal
+
+# Logs
+*.log
+logs/
+
+# Exports
+*.csv
+docs/*.csv
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
