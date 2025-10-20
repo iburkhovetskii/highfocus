@@ -36,7 +36,10 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=os.getenv("BOT_TOKEN"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-db = Database()
+
+# Определяем путь к БД (для Railway с Volume)
+DB_PATH = os.getenv("DB_PATH", "/data/highfocus.db")
+db = Database(db_path=DB_PATH)
 
 # Admins
 raw_admins = os.getenv("ADMIN_IDS", "")
