@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv
 
-from database import Database
+from database_postgres import Database
 from states import QuizStates
 from keyboards import (
     get_start_keyboard,
@@ -37,9 +37,8 @@ bot = Bot(token=os.getenv("BOT_TOKEN"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
-# Определяем путь к БД (для Railway с Volume)
-DB_PATH = os.getenv("DB_PATH", "/data/highfocus.db")
-db = Database(db_path=DB_PATH)
+# Инициализация базы данных PostgreSQL
+db = Database()
 
 # Admins
 raw_admins = os.getenv("ADMIN_IDS", "")
@@ -457,13 +456,18 @@ async def unknown_command(message: Message):
 
 
 async def main():
-    # Инициализация БД
-    await db.init_db()
-    logger.info("База данных инициализирована")
-    
-    # Запуск бота
-    logger.info("Бот запущен")
-    await dp.start_polling(bot)
+    try:
+        # Инициализация БД
+        await db.init_db()
+        logger.info("База данных PostgreSQL инициализирована")
+        
+        # Запуск бота
+        logger.info("Бот запущен")
+        await dp.start_polling(bot)
+    except Exception as e:
+        logger.error(f"Ошибка запуска: {e}")
+    finally:
+        await db.close()
 
 
 if __name__ == "__main__":

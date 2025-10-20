@@ -5,10 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY bot.py database.py keyboards.py states.py config.py db_viewer.py ./
-
-# Создаём директорию для БД (будет смонтирован Volume)
-RUN mkdir -p /data && chmod 777 /data
+COPY bot.py database_postgres.py keyboards.py states.py config.py db_viewer.py ./
 
 ENV PYTHONUNBUFFERED=1
 
