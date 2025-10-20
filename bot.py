@@ -200,9 +200,12 @@ async def process_question_1(callback: CallbackQuery, state: FSMContext):
     }
     await state.update_data(answers=answers)
     
-    # Показываем выбранный ответ
+    # Убираем кнопки у предыдущего вопроса
+    await callback.message.edit_reply_markup(reply_markup=None)
+    
+    # Показываем выбранный ответ как сообщение от пользователя
     selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.edit_text(f"{QUESTIONS[1]}\n\n✅ Ваш ответ: {selected_answer}")
+    await callback.message.answer(f"👤 {selected_answer}")
     
     await state.set_state(QuizStates.question_2)
     await callback.message.answer(QUESTIONS[2], reply_markup=get_question_2_keyboard())
@@ -221,9 +224,12 @@ async def process_question_2(callback: CallbackQuery, state: FSMContext):
     }
     await state.update_data(answers=answers)
     
-    # Показываем выбранный ответ
+    # Убираем кнопки у предыдущего вопроса
+    await callback.message.edit_reply_markup(reply_markup=None)
+    
+    # Показываем выбранный ответ как сообщение от пользователя
     selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.edit_text(f"{QUESTIONS[2]}\n\n✅ Ваш ответ: {selected_answer}")
+    await callback.message.answer(f"👤 {selected_answer}")
     
     await state.set_state(QuizStates.question_3)
     await callback.message.answer(QUESTIONS[3], reply_markup=get_question_3_keyboard())
@@ -242,9 +248,12 @@ async def process_question_3(callback: CallbackQuery, state: FSMContext):
     }
     await state.update_data(answers=answers)
     
-    # Показываем выбранный ответ
+    # Убираем кнопки у предыдущего вопроса
+    await callback.message.edit_reply_markup(reply_markup=None)
+    
+    # Показываем выбранный ответ как сообщение от пользователя
     selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.edit_text(f"{QUESTIONS[3]}\n\n✅ Ваш ответ: {selected_answer}")
+    await callback.message.answer(f"👤 {selected_answer}")
     
     await state.set_state(QuizStates.question_4)
     await callback.message.answer(QUESTIONS[4], reply_markup=get_question_4_keyboard())
@@ -263,9 +272,12 @@ async def process_question_4(callback: CallbackQuery, state: FSMContext):
     }
     await state.update_data(answers=answers)
     
-    # Показываем выбранный ответ
+    # Убираем кнопки у предыдущего вопроса
+    await callback.message.edit_reply_markup(reply_markup=None)
+    
+    # Показываем выбранный ответ как сообщение от пользователя
     selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.edit_text(f"{QUESTIONS[4]}\n\n✅ Ваш ответ: {selected_answer}")
+    await callback.message.answer(f"👤 {selected_answer}")
     
     await state.set_state(QuizStates.question_5)
     await callback.message.answer(QUESTIONS[5], reply_markup=get_question_5_keyboard())
@@ -284,9 +296,12 @@ async def process_question_5(callback: CallbackQuery, state: FSMContext):
     }
     await state.update_data(answers=answers)
     
-    # Показываем выбранный ответ
+    # Убираем кнопки у предыдущего вопроса
+    await callback.message.edit_reply_markup(reply_markup=None)
+    
+    # Показываем выбранный ответ как сообщение от пользователя
     selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.edit_text(f"{QUESTIONS[5]}\n\n✅ Ваш ответ: {selected_answer}")
+    await callback.message.answer(f"👤 {selected_answer}")
     
     await state.set_state(QuizStates.question_6)
     await callback.message.answer(QUESTIONS[6], reply_markup=get_question_6_keyboard())
@@ -305,9 +320,12 @@ async def process_question_6(callback: CallbackQuery, state: FSMContext):
     }
     await state.update_data(answers=answers)
     
-    # Показываем выбранный ответ
+    # Убираем кнопки у предыдущего вопроса
+    await callback.message.edit_reply_markup(reply_markup=None)
+    
+    # Показываем выбранный ответ как сообщение от пользователя
     selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.edit_text(f"{QUESTIONS[6]}\n\n✅ Ваш ответ: {selected_answer}")
+    await callback.message.answer(f"👤 {selected_answer}")
     
     # Показываем разделитель
     await callback.message.answer(DIVIDER_TEXT)
@@ -330,9 +348,12 @@ async def process_question_7(callback: CallbackQuery, state: FSMContext):
     }
     await state.update_data(answers=answers)
     
-    # Показываем выбранный ответ
+    # Убираем кнопки у предыдущего вопроса
+    await callback.message.edit_reply_markup(reply_markup=None)
+    
+    # Показываем выбранный ответ как сообщение от пользователя
     selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.edit_text(f"{QUESTION_7}\n\n✅ Ваш ответ: {selected_answer}")
+    await callback.message.answer(f"👤 {selected_answer}")
     
     await state.set_state(QuizStates.question_8)
     await callback.message.answer(QUESTION_8, reply_markup=get_question_8_keyboard())
@@ -350,9 +371,12 @@ async def process_question_8(callback: CallbackQuery, state: FSMContext):
         "text": ANSWER_TEXTS.get(callback.data, callback.data)
     }
     
-    # Показываем выбранный ответ
+    # Убираем кнопки у предыдущего вопроса
+    await callback.message.edit_reply_markup(reply_markup=None)
+    
+    # Показываем выбранный ответ как сообщение от пользователя
     selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.edit_text(f"{QUESTION_8}\n\n✅ Ваш ответ: {selected_answer}")
+    await callback.message.answer(f"👤 {selected_answer}")
     
     # Подсчитываем результаты (вопросы 1-6)
     focus_counts = {"creative": 0, "analytical": 0, "energetic": 0}
