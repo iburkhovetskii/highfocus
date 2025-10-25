@@ -14,6 +14,7 @@ from states import QuizStates
 from keyboards import (
     get_start_keyboard,
     get_back_to_start_keyboard,
+    get_consent_keyboard,
     get_question_1_keyboard,
     get_question_2_keyboard,
     get_question_3_keyboard,
@@ -24,6 +25,7 @@ from keyboards import (
     get_question_8_keyboard,
     get_final_keyboard
 )
+from consent_text import CONSENT_SHORT, CONSENT_FULL
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -187,9 +189,47 @@ async def about_handler(callback: CallbackQuery):
 # Обработчик начала квиза
 @dp.callback_query(F.data == "start_quiz")
 async def start_quiz(callback: CallbackQuery, state: FSMContext):
+    """Показ формы согласия на обработку персональных данных"""
+    await state.set_state(QuizStates.consent)
+    await callback.message.answer(CONSENT_SHORT, reply_markup=get_consent_keyboard())
+    await callback.answer()
+
+
+# Обработчик согласия
+@dp.callback_query(QuizStates.consent, F.data == "consent_agree")
+async def process_consent_agree(callback: CallbackQuery, state: FSMContext):
+    """Пользователь согласился с обработкой данных"""
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer("👤 Согласен")
+    
+    # Сохраняем согласие в данные состояния
+    await state.update_data(consent_given=True, answers={})
+    
+    # Переходим к первому вопросу
     await state.set_state(QuizStates.question_1)
-    await state.update_data(answers={})
     await callback.message.answer(QUESTIONS[1], reply_markup=get_question_1_keyboard())
+    await callback.answer()
+
+
+@dp.callback_query(QuizStates.consent, F.data == "consent_disagree")
+async def process_consent_disagree(callback: CallbackQuery, state: FSMContext):
+    """Пользователь не согласился с обработкой данных"""
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer("👤 Не согласен")
+    
+    await callback.message.answer(
+        "😔 Без согласия на обработку данных мы не можем провести квиз.\n\n"
+        "Если передумаете — возвращайтесь! 👋",
+        reply_markup=get_start_keyboard()
+    )
+    await state.clear()
+    await callback.answer()
+
+
+@dp.callback_query(QuizStates.consent, F.data == "consent_read")
+async def process_consent_read(callback: CallbackQuery):
+    """Показ полного текста согласия"""
+    await callback.message.answer(CONSENT_FULL, reply_markup=get_consent_keyboard())
     await callback.answer()
 
 

@@ -19,6 +19,16 @@ def get_back_to_start_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
+def get_consent_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура согласия на обработку персональных данных"""
+    keyboard = [
+        [InlineKeyboardButton(text="✅ Согласен", callback_data="consent_agree")],
+        [InlineKeyboardButton(text="📄 Прочитать полностью", callback_data="consent_read")],
+        [InlineKeyboardButton(text="❌ Не согласен", callback_data="consent_disagree")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
 def get_question_1_keyboard() -> InlineKeyboardMarkup:
     """Вопрос 1: Когда тебе нужно сосредоточиться, ты..."""
     keyboard = [
