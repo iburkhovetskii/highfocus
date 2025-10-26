@@ -279,18 +279,6 @@ async def process_consent_disagree(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@dp.callback_query(QuizStates.consent, F.data == "consent_read")
-async def process_consent_read(callback: CallbackQuery):
-    """Повторная отправка файла с политикой"""
-    consent_file = FSInputFile("Политика_обработки_персональных_данных.docx")
-    await callback.message.answer_document(
-        consent_file,
-        caption="📄 Политика обработки персональных данных (повторная отправка)",
-        reply_markup=get_consent_keyboard()
-    )
-    await callback.answer()
-
-
 # Обработчик вопроса 1
 @dp.message(QuizStates.question_1, F.text.in_(TEXT_TO_TYPE.keys()))
 async def process_question_1(message: Message, state: FSMContext):
