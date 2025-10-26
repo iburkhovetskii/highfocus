@@ -5,7 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY bot.py database_postgres.py keyboards.py states.py config.py db_viewer.py consent_text.py ./
+COPY bot.py database_postgres.py keyboards.py states.py config.py db_viewer.py consent_text.py "Политика_обработки_персональных_данных.docx" ./
 
 ENV PYTHONUNBUFFERED=1
 

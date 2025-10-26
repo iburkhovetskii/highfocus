@@ -4,7 +4,7 @@ import os
 import os as _os
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv
@@ -237,7 +237,14 @@ async def about_handler(callback: CallbackQuery):
 async def start_quiz(callback: CallbackQuery, state: FSMContext):
     """Показ формы согласия на обработку персональных данных"""
     await state.set_state(QuizStates.consent)
-    await callback.message.answer(CONSENT_SHORT, reply_markup=get_consent_keyboard())
+    
+    # Отправляем файл с политикой обработки данных
+    consent_file = FSInputFile("Политика_обработки_персональных_данных.docx")
+    await callback.message.answer_document(
+        consent_file,
+        caption="📄 Политика обработки персональных данных\n\nПожалуйста, ознакомьтесь с документом.",
+        reply_markup=get_consent_keyboard()
+    )
     await callback.answer()
 
 
@@ -274,8 +281,13 @@ async def process_consent_disagree(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(QuizStates.consent, F.data == "consent_read")
 async def process_consent_read(callback: CallbackQuery):
-    """Показ полного текста согласия"""
-    await callback.message.answer(CONSENT_FULL, reply_markup=get_consent_keyboard())
+    """Повторная отправка файла с политикой"""
+    consent_file = FSInputFile("Политика_обработки_персональных_данных.docx")
+    await callback.message.answer_document(
+        consent_file,
+        caption="📄 Политика обработки персональных данных (повторная отправка)",
+        reply_markup=get_consent_keyboard()
+    )
     await callback.answer()
 
 
