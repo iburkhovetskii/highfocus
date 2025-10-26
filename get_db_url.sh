@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "Получите DATABASE_URL из Railway Dashboard:"
+echo "1. Зайдите: https://railway.com/project/f0f085c8-2361-4c9a-8253-52a4ed5e0165"
+echo "2. Выберите сервис PostgreSQL (не bot)"
+echo "3. Variables → DATABASE_URL"
+echo "4. Нажмите на значок 'глаз' чтобы показать полный URL"
+echo "5. Скопируйте URL и добавьте в .env:"
+echo ""
+echo "DATABASE_URL=postgresql://postgres:password@host:port/railway"
+echo ""
+echo "После этого запустите: python3 export_railway_db.py"

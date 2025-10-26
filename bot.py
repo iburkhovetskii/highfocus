@@ -158,6 +158,52 @@ ANSWER_TEXTS = {
     "q8_undecided": "🤷 Пока не решил"
 }
 
+# Маппинг текстов ответов на типы фокуса (для обработки text messages)
+TEXT_TO_TYPE = {
+    # Вопрос 1
+    "💡 Ищу вдохновение и новые подходы": "creative",
+    "🧠 Раскладываю задачу по шагам": "analytical",
+    "⚡️ Просто начинаю делать — фокус приходит в действии": "energetic",
+    
+    # Вопрос 2
+    "🎶 Настроение, музыка, атмосфера": "creative",
+    "📋 Чёткий план и порядок": "analytical",
+    "🚀 Азарт, дедлайн и движение": "energetic",
+    
+    # Вопрос 3
+    "💭 Однообразие, скука": "creative",
+    "📱 Шум, уведомления, отвлекающие люди": "analytical",
+    "💤 Усталость и низкий уровень энергии": "energetic",
+    
+    # Вопрос 4
+    "💡 Ищу нестандартное решение": "creative",
+    "🧠 Разбиваю на части и иду по шагам": "analytical",
+    "⚡️ Беру и делаю — разберусь по пути": "energetic",
+    
+    # Вопрос 5
+    "💡 Поток идей и вдохновение": "creative",
+    "🧠 Чёткие мысли и контроль над процессом": "analytical",
+    "⚡️ Максимальная скорость и энергия": "energetic",
+    
+    # Вопрос 6
+    "🌅 Утром — когда всё только начинается": "analytical",
+    "🌇 Днём — в потоке задач и общения": "creative",
+    "🌙 Вечером / ночью — когда никто не мешает": "energetic",
+    
+    # Вопрос 7
+    "⚡️ Да, это то, чего не хватает": "yes_need",
+    "☕️ Возможно, если вкус будет приятный": "maybe_taste",
+    "🤷 Интересно попробовать": "curious",
+    "🚫 Нет, я остаюсь при кофе": "no_coffee",
+    
+    # Вопрос 8
+    "🍐 Груша–Пармезан": "pear",
+    "🍯 Солёная карамель": "caramel",
+    "🍫 Брауни": "brownie",
+    "🤔 Ещё не пробовал, но хочу": "want",
+    "🤷 Пока не решил": "undecided"
+}
+
 
 # Обработчик команды /start
 @dp.message(CommandStart())
@@ -234,194 +280,114 @@ async def process_consent_read(callback: CallbackQuery):
 
 
 # Обработчик вопроса 1
-@dp.callback_query(QuizStates.question_1, F.data.startswith("q1_"))
-async def process_question_1(callback: CallbackQuery, state: FSMContext):
-    focus_type = callback.data.split("_")[1]
+@dp.message(QuizStates.question_1, F.text.in_(TEXT_TO_TYPE.keys()))
+async def process_question_1(message: Message, state: FSMContext):
+    focus_type = TEXT_TO_TYPE.get(message.text)
     data = await state.get_data()
     answers = data.get("answers", {})
     answers["q1"] = {
         "type": focus_type,
-        "text": ANSWER_TEXTS.get(callback.data, callback.data)
+        "text": message.text
     }
     await state.update_data(answers=answers)
     
-    # Убираем кнопки у предыдущего вопроса
-    await callback.message.edit_reply_markup(reply_markup=None)
-    
-    # Показываем выбранный ответ как сообщение от пользователя
-    selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.answer(f"👤 {selected_answer}")
-    
     await state.set_state(QuizStates.question_2)
-    await callback.message.answer(QUESTIONS[2], reply_markup=get_question_2_keyboard())
-    await callback.answer()
+    await message.answer(QUESTIONS[2], reply_markup=get_question_2_keyboard())
 
 
 # Обработчик вопроса 2
-@dp.callback_query(QuizStates.question_2, F.data.startswith("q2_"))
-async def process_question_2(callback: CallbackQuery, state: FSMContext):
-    focus_type = callback.data.split("_")[1]
+@dp.message(QuizStates.question_2, F.text.in_(TEXT_TO_TYPE.keys()))
+async def process_question_2(message: Message, state: FSMContext):
+    focus_type = TEXT_TO_TYPE.get(message.text)
     data = await state.get_data()
     answers = data.get("answers", {})
     answers["q2"] = {
         "type": focus_type,
-        "text": ANSWER_TEXTS.get(callback.data, callback.data)
+        "text": message.text
     }
     await state.update_data(answers=answers)
     
-    # Убираем кнопки у предыдущего вопроса
-    await callback.message.edit_reply_markup(reply_markup=None)
-    
-    # Показываем выбранный ответ как сообщение от пользователя
-    selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.answer(f"👤 {selected_answer}")
-    
     await state.set_state(QuizStates.question_3)
-    await callback.message.answer(QUESTIONS[3], reply_markup=get_question_3_keyboard())
-    await callback.answer()
+    await message.answer(QUESTIONS[3], reply_markup=get_question_3_keyboard())
 
 
 # Обработчик вопроса 3
-@dp.callback_query(QuizStates.question_3, F.data.startswith("q3_"))
-async def process_question_3(callback: CallbackQuery, state: FSMContext):
-    focus_type = callback.data.split("_")[1]
+@dp.message(QuizStates.question_3, F.text.in_(TEXT_TO_TYPE.keys()))
+async def process_question_3(message: Message, state: FSMContext):
+    focus_type = TEXT_TO_TYPE.get(message.text)
     data = await state.get_data()
     answers = data.get("answers", {})
-    answers["q3"] = {
-        "type": focus_type,
-        "text": ANSWER_TEXTS.get(callback.data, callback.data)
-    }
+    answers["q3"] = {"type": focus_type, "text": message.text}
     await state.update_data(answers=answers)
     
-    # Убираем кнопки у предыдущего вопроса
-    await callback.message.edit_reply_markup(reply_markup=None)
-    
-    # Показываем выбранный ответ как сообщение от пользователя
-    selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.answer(f"👤 {selected_answer}")
-    
     await state.set_state(QuizStates.question_4)
-    await callback.message.answer(QUESTIONS[4], reply_markup=get_question_4_keyboard())
-    await callback.answer()
+    await message.answer(QUESTIONS[4], reply_markup=get_question_4_keyboard())
 
 
 # Обработчик вопроса 4
-@dp.callback_query(QuizStates.question_4, F.data.startswith("q4_"))
-async def process_question_4(callback: CallbackQuery, state: FSMContext):
-    focus_type = callback.data.split("_")[1]
+@dp.message(QuizStates.question_4, F.text.in_(TEXT_TO_TYPE.keys()))
+async def process_question_4(message: Message, state: FSMContext):
+    focus_type = TEXT_TO_TYPE.get(message.text)
     data = await state.get_data()
     answers = data.get("answers", {})
-    answers["q4"] = {
-        "type": focus_type,
-        "text": ANSWER_TEXTS.get(callback.data, callback.data)
-    }
+    answers["q4"] = {"type": focus_type, "text": message.text}
     await state.update_data(answers=answers)
     
-    # Убираем кнопки у предыдущего вопроса
-    await callback.message.edit_reply_markup(reply_markup=None)
-    
-    # Показываем выбранный ответ как сообщение от пользователя
-    selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.answer(f"👤 {selected_answer}")
-    
     await state.set_state(QuizStates.question_5)
-    await callback.message.answer(QUESTIONS[5], reply_markup=get_question_5_keyboard())
-    await callback.answer()
+    await message.answer(QUESTIONS[5], reply_markup=get_question_5_keyboard())
 
 
 # Обработчик вопроса 5
-@dp.callback_query(QuizStates.question_5, F.data.startswith("q5_"))
-async def process_question_5(callback: CallbackQuery, state: FSMContext):
-    focus_type = callback.data.split("_")[1]
+@dp.message(QuizStates.question_5, F.text.in_(TEXT_TO_TYPE.keys()))
+async def process_question_5(message: Message, state: FSMContext):
+    focus_type = TEXT_TO_TYPE.get(message.text)
     data = await state.get_data()
     answers = data.get("answers", {})
-    answers["q5"] = {
-        "type": focus_type,
-        "text": ANSWER_TEXTS.get(callback.data, callback.data)
-    }
+    answers["q5"] = {"type": focus_type, "text": message.text}
     await state.update_data(answers=answers)
     
-    # Убираем кнопки у предыдущего вопроса
-    await callback.message.edit_reply_markup(reply_markup=None)
-    
-    # Показываем выбранный ответ как сообщение от пользователя
-    selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.answer(f"👤 {selected_answer}")
-    
     await state.set_state(QuizStates.question_6)
-    await callback.message.answer(QUESTIONS[6], reply_markup=get_question_6_keyboard())
-    await callback.answer()
+    await message.answer(QUESTIONS[6], reply_markup=get_question_6_keyboard())
 
 
 # Обработчик вопроса 6
-@dp.callback_query(QuizStates.question_6, F.data.startswith("q6_"))
-async def process_question_6(callback: CallbackQuery, state: FSMContext):
-    focus_type = callback.data.split("_")[1]
+@dp.message(QuizStates.question_6, F.text.in_(TEXT_TO_TYPE.keys()))
+async def process_question_6(message: Message, state: FSMContext):
+    focus_type = TEXT_TO_TYPE.get(message.text)
     data = await state.get_data()
     answers = data.get("answers", {})
-    answers["q6"] = {
-        "type": focus_type,
-        "text": ANSWER_TEXTS.get(callback.data, callback.data)
-    }
+    answers["q6"] = {"type": focus_type, "text": message.text}
     await state.update_data(answers=answers)
     
-    # Убираем кнопки у предыдущего вопроса
-    await callback.message.edit_reply_markup(reply_markup=None)
-    
-    # Показываем выбранный ответ как сообщение от пользователя
-    selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.answer(f"👤 {selected_answer}")
-    
-    # Показываем разделитель
-    await callback.message.answer(DIVIDER_TEXT)
+    await message.answer(DIVIDER_TEXT)
     await asyncio.sleep(1.5)
     
     await state.set_state(QuizStates.question_7)
-    await callback.message.answer(QUESTION_7, reply_markup=get_question_7_keyboard())
-    await callback.answer()
+    await message.answer(QUESTION_7, reply_markup=get_question_7_keyboard())
 
 
 # Обработчик вопроса 7
-@dp.callback_query(QuizStates.question_7, F.data.startswith("q7_"))
-async def process_question_7(callback: CallbackQuery, state: FSMContext):
-    answer = callback.data.split("_", 1)[1]
+@dp.message(QuizStates.question_7, F.text.in_(TEXT_TO_TYPE.keys()))
+async def process_question_7(message: Message, state: FSMContext):
+    answer_type = TEXT_TO_TYPE.get(message.text)
     data = await state.get_data()
     answers = data.get("answers", {})
-    answers["q7"] = {
-        "type": answer,
-        "text": ANSWER_TEXTS.get(callback.data, callback.data)
-    }
+    answers["q7"] = {"type": answer_type, "text": message.text}
     await state.update_data(answers=answers)
     
-    # Убираем кнопки у предыдущего вопроса
-    await callback.message.edit_reply_markup(reply_markup=None)
-    
-    # Показываем выбранный ответ как сообщение от пользователя
-    selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.answer(f"👤 {selected_answer}")
-    
     await state.set_state(QuizStates.question_8)
-    await callback.message.answer(QUESTION_8, reply_markup=get_question_8_keyboard())
-    await callback.answer()
+    await message.answer(QUESTION_8, reply_markup=get_question_8_keyboard())
 
 
 # Обработчик вопроса 8 и показ результатов
-@dp.callback_query(QuizStates.question_8, F.data.startswith("q8_"))
-async def process_question_8(callback: CallbackQuery, state: FSMContext):
-    answer = callback.data.split("_", 1)[1]
+@dp.message(QuizStates.question_8, F.text.in_(TEXT_TO_TYPE.keys()))
+async def process_question_8(message: Message, state: FSMContext):
+    from aiogram.types import ReplyKeyboardRemove
+    
+    answer_type = TEXT_TO_TYPE.get(message.text)
     data = await state.get_data()
     answers = data.get("answers", {})
-    answers["q8"] = {
-        "type": answer,
-        "text": ANSWER_TEXTS.get(callback.data, callback.data)
-    }
-    
-    # Убираем кнопки у предыдущего вопроса
-    await callback.message.edit_reply_markup(reply_markup=None)
-    
-    # Показываем выбранный ответ как сообщение от пользователя
-    selected_answer = ANSWER_TEXTS.get(callback.data, callback.data)
-    await callback.message.answer(f"👤 {selected_answer}")
+    answers["q8"] = {"type": answer_type, "text": message.text}
     
     # Подсчитываем результаты (вопросы 1-6)
     focus_counts = {"creative": 0, "analytical": 0, "energetic": 0}
@@ -437,20 +403,19 @@ async def process_question_8(callback: CallbackQuery, state: FSMContext):
     
     # Сохраняем результаты в БД
     await db.save_quiz_result(
-        user_id=callback.from_user.id,
+        user_id=message.from_user.id,
         focus_type=dominant_focus,
         answers=answers
     )
     
-    # Показываем результат
+    # Показываем результат (удаляем reply keyboard)
     result_text = RESULTS[dominant_focus]
-    await callback.message.answer(result_text)
+    await message.answer(result_text, reply_markup=ReplyKeyboardRemove())
     await asyncio.sleep(2)
     
     # Показываем финальное сообщение
-    await callback.message.answer(FINAL_TEXT, reply_markup=get_final_keyboard())
+    await message.answer(FINAL_TEXT, reply_markup=get_final_keyboard())
     await state.clear()
-    await callback.answer()
 
 
 # Обработчик кнопки "Уже подписан"
