@@ -240,14 +240,14 @@ async def cmd_start(message: Message, state: FSMContext):
         username=message.from_user.username,
         first_name=message.from_user.first_name
     )
-    await message.answer(START_TEXT, reply_markup=get_start_keyboard())
+    await message.answer(START_TEXT, reply_markup=get_start_keyboard(), parse_mode="Markdown")
 
 
 # Обработчик кнопки "Назад"
 @dp.callback_query(F.data == "back_to_start")
 async def back_to_start(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.answer(START_TEXT, reply_markup=get_start_keyboard())
+    await callback.message.answer(START_TEXT, reply_markup=get_start_keyboard(), parse_mode="Markdown")
     await callback.answer()
 
 
@@ -401,25 +401,36 @@ async def process_question_5(message: Message, state: FSMContext):
         answers=answers
     )
     
+    # Сохраняем результат в state для показа после подписки
+    await state.update_data(quiz_result=dominant_type)
+    
     # Сначала показываем сообщение о подписке (удаляем reply keyboard)
     await message.answer(SUBSCRIPTION_TEXT, reply_markup=ReplyKeyboardRemove())
     await asyncio.sleep(1)
     
     # Показываем кнопки подписки
     await message.answer(FINAL_TEXT, reply_markup=get_final_keyboard())
-    await asyncio.sleep(2)
-    
-    # Показываем результат квиза
-    result_text = RESULTS[dominant_type]
-    await message.answer(result_text)
-    await state.clear()
 
 
 # Обработчик кнопки "Уже подписан"
 @dp.callback_query(F.data == "already_subscribed")
-async def already_subscribed(callback: CallbackQuery):
+async def already_subscribed(callback: CallbackQuery, state: FSMContext):
+    # Получаем результат квиза из state
+    data = await state.get_data()
+    quiz_result = data.get("quiz_result")
+    
+    if quiz_result:
+        # Показываем результат квиза
+        result_text = RESULTS[quiz_result]
+        await callback.message.answer(result_text)
+        await asyncio.sleep(1)
+    
+    # Показываем финальное сообщение
     await callback.message.answer(SUBSCRIBED_TEXT)
     await callback.answer("Спасибо! 🎉")
+    
+    # Очищаем state
+    await state.clear()
 
 
 # Служебная команда для получения Telegram ID
