@@ -9,4 +9,8 @@ class QuizStates(StatesGroup):
     question_3 = State()
     question_4 = State()
     question_5 = State()
+    # Дополнительные вопросы о High Focus
+    highfocus_q1 = State()
+    highfocus_q2 = State()
+    highfocus_q3 = State()
 

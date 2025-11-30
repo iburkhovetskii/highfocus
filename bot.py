@@ -20,6 +20,9 @@ from keyboards import (
     get_question_3_keyboard,
     get_question_4_keyboard,
     get_question_5_keyboard,
+    get_highfocus_q1_keyboard,
+    get_highfocus_q2_keyboard,
+    get_highfocus_q3_keyboard,
     get_final_keyboard
 )
 from consent_text import CONSENT_SHORT, CONSENT_FULL
@@ -129,6 +132,40 @@ RESULTS = {
 SUBSCRIPTION_TEXT = """⚡️ Остался последний шаг — подпишись на наш Telegram-канал High Focus!
 
 Там — всё о концентрации, энергии и продуктивности: как оставаться в фокусе, когда мир шумит, и как прокачивать себя каждый день."""
+
+# Дополнительные вопросы о High Focus
+HIGHFOCUS_INTRO = """Перед финалом — пара вопросов о High Focus, чтобы понимать, что ты в теме 😎🤝"""
+
+HIGHFOCUS_Q1 = """1️⃣ High Focus — это…
+
+Выбери вариант, который лучше всего описывает наш продукт 👇"""
+
+HIGHFOCUS_Q2 = """2️⃣ А теперь про эффект.
+
+Зачем вообще пить High Focus?"""
+
+HIGHFOCUS_Q3 = """3️⃣ В какой ситуации High Focus подходит лучше всего?"""
+
+# Правильные ответы High Focus
+HIGHFOCUS_CORRECT_Q1 = "✅ Отлично! Ты правильно уловил суть High Focus — двигаемся дальше ⚡️"
+HIGHFOCUS_CORRECT_Q2 = "✅ Да! С таким фокусом по жизни далеко уйдёшь 😉\n\nПоехали дальше!"
+HIGHFOCUS_CORRECT_Q3 = "✅ Точно в цель! Ты отлично чувствуешь, когда нужен High Focus 🎯"
+
+# Неправильные ответы High Focus
+HIGHFOCUS_WRONG_Q1 = {
+    "🥤 Новый энергетик на основе молока Эконива": "❌ Похоже, фокус чуть сместился.\n\nHigh Focus не относится к энергетикам — мы работаем совсем иначе.\n\nДавай попробуем ещё раз 👇",
+    "☕️ Кофейный напиток для бодрости и энергии": "❌ Немного мимо.\n\nHigh Focus — это не кофе, и эффект у нас тоже другой.\n\nПопробуем ещё раз 👇"
+}
+
+HIGHFOCUS_WRONG_Q2 = {
+    "😵 Чтобы взбодриться и «врубить турбо-режим»": "❌ Улетели слишком далеко 😅\n\nHigh Focus — не про жёсткий \"турбо-режим\", а про более осознанное состояние.\n\nДавай попробуем ещё раз 👇",
+    "🚀 Чтобы резко поднять энергию, как у энергетиков": "❌ Немного не то.\n\nHigh Focus не работает как классический энергетик с резким скачком.\n\nПопробуем ещё раз 👇"
+}
+
+HIGHFOCUS_WRONG_Q3 = {
+    "😵 Когда нужно бодрствовать всю ночь": "❌ Это уже задача для супергероев 😅\n\nHigh Focus — не для ночных марафонов без сна.\n\nДавай попробуем ещё раз 👇",
+    "🍔 Когда хочешь заменить приём пищи": "❌ Мы точно не про это!\n\nHigh Focus не заменяет еду — он про ум и концентрацию.\n\nПопробуем ещё раз 👇"
+}
 
 # Полные тексты ответов для сохранения в БД
 ANSWER_TEXTS = {
@@ -354,11 +391,9 @@ async def process_question_4(message: Message, state: FSMContext):
     await message.answer(QUESTIONS[5], reply_markup=get_question_5_keyboard())
 
 
-# Обработчик вопроса 5 и показ результатов
+# Обработчик вопроса 5 - переход к дополнительным вопросам о High Focus
 @dp.message(QuizStates.question_5, F.text.in_(TEXT_TO_TYPE.keys()))
 async def process_question_5(message: Message, state: FSMContext):
-    from aiogram.types import ReplyKeyboardRemove
-    
     focus_type = TEXT_TO_TYPE.get(message.text)
     data = await state.get_data()
     answers = data.get("answers", {})
@@ -392,15 +427,82 @@ async def process_question_5(message: Message, state: FSMContext):
         answers=answers
     )
     
-    # Сохраняем результат в state для показа после подписки
-    await state.update_data(quiz_result=dominant_type)
+    # Сохраняем результат в state для показа после всех вопросов
+    await state.update_data(quiz_result=dominant_type, answers=answers)
     
-    # Удаляем reply keyboard
-    await message.answer("✅", reply_markup=ReplyKeyboardRemove())
-    await asyncio.sleep(0.5)
+    # Переходим к дополнительным вопросам о High Focus
+    await asyncio.sleep(1)
+    await message.answer(HIGHFOCUS_INTRO)
+    await asyncio.sleep(1.5)
     
-    # Показываем сообщение о подписке с кнопками
-    await message.answer(SUBSCRIPTION_TEXT, reply_markup=get_final_keyboard())
+    await state.set_state(QuizStates.highfocus_q1)
+    await message.answer(HIGHFOCUS_Q1, reply_markup=get_highfocus_q1_keyboard())
+
+
+# Обработчик High Focus вопрос 1
+@dp.message(QuizStates.highfocus_q1)
+async def process_highfocus_q1(message: Message, state: FSMContext):
+    answer = message.text
+    
+    # Проверяем правильный ответ
+    if answer == "🧠 Молочный напиток для концентрации и энергии на основе гуараны и L-теанина":
+        await message.answer(HIGHFOCUS_CORRECT_Q1)
+        await asyncio.sleep(1.5)
+        
+        await state.set_state(QuizStates.highfocus_q2)
+        await message.answer(HIGHFOCUS_Q2, reply_markup=get_highfocus_q2_keyboard())
+    else:
+        # Неправильный ответ - показываем сообщение об ошибке и спрашиваем заново
+        error_msg = HIGHFOCUS_WRONG_Q1.get(answer, "❌ Попробуем ещё раз 👇")
+        await message.answer(error_msg)
+        await asyncio.sleep(1.5)
+        await message.answer(HIGHFOCUS_Q1, reply_markup=get_highfocus_q1_keyboard())
+
+
+# Обработчик High Focus вопрос 2
+@dp.message(QuizStates.highfocus_q2)
+async def process_highfocus_q2(message: Message, state: FSMContext):
+    answer = message.text
+    
+    # Проверяем правильный ответ
+    if answer == "🧠 Чтобы поддерживать концентрацию, ясность и мягкий уровень энергии в течение дня":
+        await message.answer(HIGHFOCUS_CORRECT_Q2)
+        await asyncio.sleep(1.5)
+        
+        await state.set_state(QuizStates.highfocus_q3)
+        await message.answer(HIGHFOCUS_Q3, reply_markup=get_highfocus_q3_keyboard())
+    else:
+        # Неправильный ответ
+        error_msg = HIGHFOCUS_WRONG_Q2.get(answer, "❌ Попробуем ещё раз 👇")
+        await message.answer(error_msg)
+        await asyncio.sleep(1.5)
+        await message.answer(HIGHFOCUS_Q2, reply_markup=get_highfocus_q2_keyboard())
+
+
+# Обработчик High Focus вопрос 3 - финальный переход к результатам
+@dp.message(QuizStates.highfocus_q3)
+async def process_highfocus_q3(message: Message, state: FSMContext):
+    from aiogram.types import ReplyKeyboardRemove
+    
+    answer = message.text
+    
+    # Проверяем правильный ответ
+    if answer == "📚 Когда нужно включить голову, сосредоточиться и работать внимательно":
+        await message.answer(HIGHFOCUS_CORRECT_Q3)
+        await asyncio.sleep(1.5)
+        
+        # Удаляем reply keyboard
+        await message.answer("✅", reply_markup=ReplyKeyboardRemove())
+        await asyncio.sleep(0.5)
+        
+        # Показываем сообщение о подписке с кнопками
+        await message.answer(SUBSCRIPTION_TEXT, reply_markup=get_final_keyboard())
+    else:
+        # Неправильный ответ
+        error_msg = HIGHFOCUS_WRONG_Q3.get(answer, "❌ Попробуем ещё раз 👇")
+        await message.answer(error_msg)
+        await asyncio.sleep(1.5)
+        await message.answer(HIGHFOCUS_Q3, reply_markup=get_highfocus_q3_keyboard())
 
 
 # Обработчик кнопки "Уже подписан"

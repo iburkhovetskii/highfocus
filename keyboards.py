@@ -109,6 +109,39 @@ def get_question_5_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
 
 
+def get_highfocus_q1_keyboard() -> ReplyKeyboardMarkup:
+    """High Focus Вопрос 1: High Focus — это…"""
+    options = [
+        "🥤 Новый энергетик на основе молока Эконива",
+        "🧠 Молочный напиток для концентрации и энергии на основе гуараны и L-теанина",
+        "☕️ Кофейный напиток для бодрости и энергии"
+    ]
+    keyboard = [[KeyboardButton(text=option)] for option in options]
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
+
+
+def get_highfocus_q2_keyboard() -> ReplyKeyboardMarkup:
+    """High Focus Вопрос 2: Зачем вообще пить High Focus?"""
+    options = [
+        "😵 Чтобы взбодриться и «врубить турбо-режим»",
+        "🚀 Чтобы резко поднять энергию, как у энергетиков",
+        "🧠 Чтобы поддерживать концентрацию, ясность и мягкий уровень энергии в течение дня"
+    ]
+    keyboard = [[KeyboardButton(text=option)] for option in options]
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
+
+
+def get_highfocus_q3_keyboard() -> ReplyKeyboardMarkup:
+    """High Focus Вопрос 3: В какой ситуации High Focus подходит лучше всего?"""
+    options = [
+        "😵 Когда нужно бодрствовать всю ночь",
+        "🍔 Когда хочешь заменить приём пищи",
+        "📚 Когда нужно включить голову, сосредоточиться и работать внимательно"
+    ]
+    keyboard = [[KeyboardButton(text=option)] for option in options]
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
+
+
 def get_final_keyboard() -> InlineKeyboardMarkup:
     """Финальная клавиатура с подпиской"""
     keyboard = [
