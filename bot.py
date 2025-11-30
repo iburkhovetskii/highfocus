@@ -526,29 +526,26 @@ async def process_highfocus_q3(message: Message, state: FSMContext):
         # Сохраняем правильный ответ
         answers["highfocus_q3"] = {"text": answer, "is_correct": True}
         
+        # Добавляем информацию о неправильных ответах и попытках
+        answers["highfocus_attempts"] = {
+            "q1": {"wrong_answers": highfocus_wrong.get("q1", []), "attempts": len(highfocus_wrong.get("q1", [])) + 1},
+            "q2": {"wrong_answers": highfocus_wrong.get("q2", []), "attempts": len(highfocus_wrong.get("q2", [])) + 1},
+            "q3": {"wrong_answers": highfocus_wrong.get("q3", []), "attempts": len(highfocus_wrong.get("q3", [])) + 1}
+        }
+        
         await message.answer(HIGHFOCUS_CORRECT_Q3)
         await asyncio.sleep(1.5)
         
-        # Сохраняем результаты в БД
+        # Сохраняем ВСЕ данные в quiz_results (включая неправильные ответы)
         quiz_result = data.get("quiz_result")
         
         try:
-            # Сначала сохраняем в старую таблицу для совместимости
             await db.save_quiz_result(
                 user_id=message.from_user.id,
                 focus_type=quiz_result,
                 answers=answers
             )
-            logger.info(f"Сохранено в quiz_results для user {message.from_user.id}")
-            
-            # Затем пытаемся сохранить в новую таблицу
-            await db.save_complete_quiz(
-                user_id=message.from_user.id,
-                focus_type=quiz_result,
-                answers=answers,
-                highfocus_wrong=highfocus_wrong
-            )
-            logger.info(f"Сохранено в complete_quiz_answers для user {message.from_user.id}")
+            logger.info(f"Сохранено полное прохождение квиза для user {message.from_user.id}")
         except Exception as e:
             # Логируем ошибку, но не падаем
             logger.error(f"Ошибка сохранения в БД для user {message.from_user.id}: {e}", exc_info=True)
