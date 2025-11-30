@@ -431,7 +431,7 @@ async def process_question_5(message: Message, state: FSMContext):
     await state.update_data(
         quiz_result=dominant_type, 
         answers=answers,
-        highfocus_attempts={"q1": 0, "q2": 0, "q3": 0}  # Счетчик попыток
+        highfocus_wrong={"q1": [], "q2": [], "q3": []}  # Массивы для неправильных ответов
     )
     
     # Переходим к дополнительным вопросам о High Focus
@@ -449,26 +449,27 @@ async def process_highfocus_q1(message: Message, state: FSMContext):
     answer = message.text
     data = await state.get_data()
     answers = data.get("answers", {})
-    highfocus_attempts = data.get("highfocus_attempts", {"q1": 0, "q2": 0, "q3": 0})
-    
-    # Увеличиваем счетчик попыток
-    highfocus_attempts["q1"] += 1
+    highfocus_wrong = data.get("highfocus_wrong", {"q1": [], "q2": [], "q3": []})
     
     # Проверяем правильный ответ
     is_correct = (answer == "🧠 Молочный напиток для концентрации и энергии на основе гуараны и L-теанина")
     
-    # Сохраняем последний ответ в state (только финальный правильный)
-    answers["highfocus_q1"] = {"text": answer, "is_correct": is_correct}
-    await state.update_data(answers=answers, highfocus_attempts=highfocus_attempts)
-    
     if is_correct:
+        # Сохраняем правильный ответ
+        answers["highfocus_q1"] = {"text": answer, "is_correct": True}
+        await state.update_data(answers=answers, highfocus_wrong=highfocus_wrong)
+        
         await message.answer(HIGHFOCUS_CORRECT_Q1)
         await asyncio.sleep(1.5)
         
         await state.set_state(QuizStates.highfocus_q2)
         await message.answer(HIGHFOCUS_Q2, reply_markup=get_highfocus_q2_keyboard())
     else:
-        # Неправильный ответ - показываем сообщение об ошибке и спрашиваем заново
+        # Сохраняем неправильный ответ
+        highfocus_wrong["q1"].append(answer)
+        await state.update_data(highfocus_wrong=highfocus_wrong)
+        
+        # Показываем сообщение об ошибке и спрашиваем заново
         error_msg = HIGHFOCUS_WRONG_Q1.get(answer, "❌ Попробуем ещё раз 👇")
         await message.answer(error_msg)
         await asyncio.sleep(1.5)
@@ -481,26 +482,27 @@ async def process_highfocus_q2(message: Message, state: FSMContext):
     answer = message.text
     data = await state.get_data()
     answers = data.get("answers", {})
-    highfocus_attempts = data.get("highfocus_attempts", {"q1": 0, "q2": 0, "q3": 0})
-    
-    # Увеличиваем счетчик попыток
-    highfocus_attempts["q2"] += 1
+    highfocus_wrong = data.get("highfocus_wrong", {"q1": [], "q2": [], "q3": []})
     
     # Проверяем правильный ответ
     is_correct = (answer == "🧠 Чтобы поддерживать концентрацию, ясность и мягкий уровень энергии в течение дня")
     
-    # Сохраняем ответ
-    answers["highfocus_q2"] = {"text": answer, "is_correct": is_correct}
-    await state.update_data(answers=answers, highfocus_attempts=highfocus_attempts)
-    
     if is_correct:
+        # Сохраняем правильный ответ
+        answers["highfocus_q2"] = {"text": answer, "is_correct": True}
+        await state.update_data(answers=answers, highfocus_wrong=highfocus_wrong)
+        
         await message.answer(HIGHFOCUS_CORRECT_Q2)
         await asyncio.sleep(1.5)
         
         await state.set_state(QuizStates.highfocus_q3)
         await message.answer(HIGHFOCUS_Q3, reply_markup=get_highfocus_q3_keyboard())
     else:
-        # Неправильный ответ
+        # Сохраняем неправильный ответ
+        highfocus_wrong["q2"].append(answer)
+        await state.update_data(highfocus_wrong=highfocus_wrong)
+        
+        # Показываем сообщение об ошибке
         error_msg = HIGHFOCUS_WRONG_Q2.get(answer, "❌ Попробуем ещё раз 👇")
         await message.answer(error_msg)
         await asyncio.sleep(1.5)
@@ -515,35 +517,25 @@ async def process_highfocus_q3(message: Message, state: FSMContext):
     answer = message.text
     data = await state.get_data()
     answers = data.get("answers", {})
-    highfocus_attempts = data.get("highfocus_attempts", {"q1": 0, "q2": 0, "q3": 0})
-    
-    # Увеличиваем счетчик попыток
-    highfocus_attempts["q3"] += 1
+    highfocus_wrong = data.get("highfocus_wrong", {"q1": [], "q2": [], "q3": []})
     
     # Проверяем правильный ответ
     is_correct = (answer == "📚 Когда нужно включить голову, сосредоточиться и работать внимательно")
     
-    # Сохраняем ответ
-    answers["highfocus_q3"] = {"text": answer, "is_correct": is_correct}
-    
     if is_correct:
+        # Сохраняем правильный ответ
+        answers["highfocus_q3"] = {"text": answer, "is_correct": True}
+        
         await message.answer(HIGHFOCUS_CORRECT_Q3)
         await asyncio.sleep(1.5)
         
-        # Сохраняем ВСЕ ответы в новую таблицу (одна запись на пользователя)
+        # Сохраняем ВСЕ ответы ТОЛЬКО в новую таблицу
         quiz_result = data.get("quiz_result")
         await db.save_complete_quiz(
             user_id=message.from_user.id,
             focus_type=quiz_result,
             answers=answers,
-            highfocus_attempts=highfocus_attempts
-        )
-        
-        # Также сохраняем в старую таблицу для совместимости
-        await db.save_quiz_result(
-            user_id=message.from_user.id,
-            focus_type=quiz_result,
-            answers=answers
+            highfocus_wrong=highfocus_wrong
         )
         
         # Сохраняем обновленные данные в state
@@ -556,8 +548,11 @@ async def process_highfocus_q3(message: Message, state: FSMContext):
         # Показываем сообщение о подписке с кнопками
         await message.answer(SUBSCRIPTION_TEXT, reply_markup=get_final_keyboard())
     else:
-        # Неправильный ответ
-        await state.update_data(highfocus_attempts=highfocus_attempts)
+        # Сохраняем неправильный ответ
+        highfocus_wrong["q3"].append(answer)
+        await state.update_data(highfocus_wrong=highfocus_wrong)
+        
+        # Показываем сообщение об ошибке
         error_msg = HIGHFOCUS_WRONG_Q3.get(answer, "❌ Попробуем ещё раз 👇")
         await message.answer(error_msg)
         await asyncio.sleep(1.5)

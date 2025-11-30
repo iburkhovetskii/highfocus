@@ -59,14 +59,17 @@ class Database:
                     q5_text TEXT,
                     
                     -- Дополнительные вопросы о High Focus
-                    highfocus_q1_text TEXT,
-                    highfocus_q1_correct BOOLEAN,
+                    -- Вопрос 1
+                    highfocus_q1_correct_text TEXT,
+                    highfocus_q1_wrong_answers TEXT,  -- JSON массив с неправильными ответами
                     highfocus_q1_attempts INTEGER,
-                    highfocus_q2_text TEXT,
-                    highfocus_q2_correct BOOLEAN,
+                    -- Вопрос 2
+                    highfocus_q2_correct_text TEXT,
+                    highfocus_q2_wrong_answers TEXT,  -- JSON массив с неправильными ответами
                     highfocus_q2_attempts INTEGER,
-                    highfocus_q3_text TEXT,
-                    highfocus_q3_correct BOOLEAN,
+                    -- Вопрос 3
+                    highfocus_q3_correct_text TEXT,
+                    highfocus_q3_wrong_answers TEXT,  -- JSON массив с неправильными ответами
                     highfocus_q3_attempts INTEGER,
                     
                     completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -111,7 +114,7 @@ class Database:
             """)
     
     async def save_complete_quiz(self, user_id: int, focus_type: str, answers: dict, 
-                                  highfocus_attempts: dict):
+                                  highfocus_wrong: dict):
         """
         Сохранение полного прохождения квиза (все ответы в одной записи)
         
@@ -119,7 +122,7 @@ class Database:
             user_id: ID пользователя
             focus_type: Определенный тип мозга
             answers: Словарь с ответами на все вопросы
-            highfocus_attempts: Словарь с количеством попыток на вопросы High Focus
+            highfocus_wrong: Словарь с неправильными ответами на вопросы High Focus
         """
         async with self.pool.acquire() as conn:
             await conn.execute("""
@@ -127,9 +130,9 @@ class Database:
                     user_id, focus_type,
                     q1_type, q1_text, q2_type, q2_text, q3_type, q3_text,
                     q4_type, q4_text, q5_type, q5_text,
-                    highfocus_q1_text, highfocus_q1_correct, highfocus_q1_attempts,
-                    highfocus_q2_text, highfocus_q2_correct, highfocus_q2_attempts,
-                    highfocus_q3_text, highfocus_q3_correct, highfocus_q3_attempts
+                    highfocus_q1_correct_text, highfocus_q1_wrong_answers, highfocus_q1_attempts,
+                    highfocus_q2_correct_text, highfocus_q2_wrong_answers, highfocus_q2_attempts,
+                    highfocus_q3_correct_text, highfocus_q3_wrong_answers, highfocus_q3_attempts
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
                         $13, $14, $15, $16, $17, $18, $19, $20, $21)
@@ -140,15 +143,15 @@ class Database:
                 answers.get('q3', {}).get('type'), answers.get('q3', {}).get('text'),
                 answers.get('q4', {}).get('type'), answers.get('q4', {}).get('text'),
                 answers.get('q5', {}).get('type'), answers.get('q5', {}).get('text'),
-                answers.get('highfocus_q1', {}).get('text'), 
-                answers.get('highfocus_q1', {}).get('is_correct'),
-                highfocus_attempts.get('q1', 1),
+                answers.get('highfocus_q1', {}).get('text'),
+                json.dumps(highfocus_wrong.get('q1', []), ensure_ascii=False),
+                len(highfocus_wrong.get('q1', [])) + 1,  # +1 за правильный ответ
                 answers.get('highfocus_q2', {}).get('text'),
-                answers.get('highfocus_q2', {}).get('is_correct'),
-                highfocus_attempts.get('q2', 1),
+                json.dumps(highfocus_wrong.get('q2', []), ensure_ascii=False),
+                len(highfocus_wrong.get('q2', [])) + 1,
                 answers.get('highfocus_q3', {}).get('text'),
-                answers.get('highfocus_q3', {}).get('is_correct'),
-                highfocus_attempts.get('q3', 1)
+                json.dumps(highfocus_wrong.get('q3', []), ensure_ascii=False),
+                len(highfocus_wrong.get('q3', [])) + 1
             )
     
     async def get_complete_quiz_by_user(self, user_id: int):
