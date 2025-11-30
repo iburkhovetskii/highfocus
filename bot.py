@@ -443,6 +443,12 @@ async def process_question_5(message: Message, state: FSMContext):
 @dp.message(QuizStates.highfocus_q1)
 async def process_highfocus_q1(message: Message, state: FSMContext):
     answer = message.text
+    data = await state.get_data()
+    answers = data.get("answers", {})
+    
+    # Сохраняем ответ
+    answers["highfocus_q1"] = {"text": answer}
+    await state.update_data(answers=answers)
     
     # Проверяем правильный ответ
     if answer == "🧠 Молочный напиток для концентрации и энергии на основе гуараны и L-теанина":
@@ -463,6 +469,12 @@ async def process_highfocus_q1(message: Message, state: FSMContext):
 @dp.message(QuizStates.highfocus_q2)
 async def process_highfocus_q2(message: Message, state: FSMContext):
     answer = message.text
+    data = await state.get_data()
+    answers = data.get("answers", {})
+    
+    # Сохраняем ответ
+    answers["highfocus_q2"] = {"text": answer}
+    await state.update_data(answers=answers)
     
     # Проверяем правильный ответ
     if answer == "🧠 Чтобы поддерживать концентрацию, ясность и мягкий уровень энергии в течение дня":
@@ -485,11 +497,27 @@ async def process_highfocus_q3(message: Message, state: FSMContext):
     from aiogram.types import ReplyKeyboardRemove
     
     answer = message.text
+    data = await state.get_data()
+    answers = data.get("answers", {})
+    
+    # Сохраняем ответ
+    answers["highfocus_q3"] = {"text": answer}
     
     # Проверяем правильный ответ
     if answer == "📚 Когда нужно включить голову, сосредоточиться и работать внимательно":
         await message.answer(HIGHFOCUS_CORRECT_Q3)
         await asyncio.sleep(1.5)
+        
+        # Обновляем запись в БД с ответами на дополнительные вопросы
+        quiz_result = data.get("quiz_result")
+        await db.save_quiz_result(
+            user_id=message.from_user.id,
+            focus_type=quiz_result,
+            answers=answers
+        )
+        
+        # Сохраняем обновленные данные в state
+        await state.update_data(answers=answers)
         
         # Удаляем reply keyboard
         await message.answer("✅", reply_markup=ReplyKeyboardRemove())
