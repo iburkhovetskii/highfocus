@@ -39,7 +39,7 @@ async def export_to_csv():
         """)
         print(f"📊 Найдено результатов квизов: {len(results)}")
         
-        # Получаем все ответы на вопросы High Focus
+        # Получаем все ответы High Focus
         highfocus_answers = await conn.fetch("""
             SELECT ha.*, u.username, u.first_name
             FROM highfocus_answers ha
@@ -47,6 +47,15 @@ async def export_to_csv():
             ORDER BY ha.answered_at DESC
         """)
         print(f"📊 Найдено ответов на вопросы High Focus: {len(highfocus_answers)}")
+        
+        # Получаем все полные результаты из новой таблицы
+        complete_answers = await conn.fetch("""
+            SELECT ca.*, u.username, u.first_name
+            FROM complete_quiz_answers ca
+            LEFT JOIN users u ON ca.user_id = u.user_id
+            ORDER BY ca.completed_at DESC
+        """)
+        print(f"📊 Найдено полных прохождений квиза: {len(complete_answers)}")
         
         # Экспортируем пользователей
         if users:
@@ -138,6 +147,38 @@ async def export_to_csv():
                         answer['answered_at']
                     ])
             print(f"✅ Ответы на вопросы High Focus экспортированы в {filename_highfocus}")
+        
+        # Экспортируем полные прохождения квиза (новая таблица - все ответы в одной строке)
+        if complete_answers:
+            filename_complete = f"railway_complete_quiz_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            with open(filename_complete, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    'id', 'user_id', 'username', 'first_name', 'focus_type', 'completed_at',
+                    'q1_type', 'q1_text', 'q2_type', 'q2_text', 'q3_type', 'q3_text',
+                    'q4_type', 'q4_text', 'q5_type', 'q5_text',
+                    'highfocus_q1_text', 'highfocus_q1_correct', 'highfocus_q1_attempts',
+                    'highfocus_q2_text', 'highfocus_q2_correct', 'highfocus_q2_attempts',
+                    'highfocus_q3_text', 'highfocus_q3_correct', 'highfocus_q3_attempts'
+                ])
+                for answer in complete_answers:
+                    writer.writerow([
+                        answer['id'],
+                        answer['user_id'],
+                        answer['username'] or '',
+                        answer['first_name'] or '',
+                        answer['focus_type'],
+                        answer['completed_at'],
+                        answer['q1_type'], answer['q1_text'],
+                        answer['q2_type'], answer['q2_text'],
+                        answer['q3_type'], answer['q3_text'],
+                        answer['q4_type'], answer['q4_text'],
+                        answer['q5_type'], answer['q5_text'],
+                        answer['highfocus_q1_text'], answer['highfocus_q1_correct'], answer['highfocus_q1_attempts'],
+                        answer['highfocus_q2_text'], answer['highfocus_q2_correct'], answer['highfocus_q2_attempts'],
+                        answer['highfocus_q3_text'], answer['highfocus_q3_correct'], answer['highfocus_q3_attempts']
+                    ])
+            print(f"✅ Полные прохождения квиза экспортированы в {filename_complete}")
         
         await conn.close()
         print("\n🎉 Экспорт завершён!")

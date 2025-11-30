@@ -39,15 +39,37 @@ class Database:
                 )
             """)
             
-            # Новая таблица для ответов на дополнительные вопросы о High Focus
+            # Новая таблица для всех ответов (основные + High Focus вопросы)
             await conn.execute("""
-                CREATE TABLE IF NOT EXISTS highfocus_answers (
+                CREATE TABLE IF NOT EXISTS complete_quiz_answers (
                     id SERIAL PRIMARY KEY,
                     user_id BIGINT,
-                    question_number INTEGER,
-                    answer_text TEXT,
-                    is_correct BOOLEAN,
-                    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    focus_type TEXT,
+                    
+                    -- Основные вопросы о типе мозга (q1-q5)
+                    q1_type TEXT,
+                    q1_text TEXT,
+                    q2_type TEXT,
+                    q2_text TEXT,
+                    q3_type TEXT,
+                    q3_text TEXT,
+                    q4_type TEXT,
+                    q4_text TEXT,
+                    q5_type TEXT,
+                    q5_text TEXT,
+                    
+                    -- Дополнительные вопросы о High Focus
+                    highfocus_q1_text TEXT,
+                    highfocus_q1_correct BOOLEAN,
+                    highfocus_q1_attempts INTEGER,
+                    highfocus_q2_text TEXT,
+                    highfocus_q2_correct BOOLEAN,
+                    highfocus_q2_attempts INTEGER,
+                    highfocus_q3_text TEXT,
+                    highfocus_q3_correct BOOLEAN,
+                    highfocus_q3_attempts INTEGER,
+                    
+                    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
             """)
@@ -88,22 +110,54 @@ class Database:
                 GROUP BY focus_type
             """)
     
-    async def save_highfocus_answer(self, user_id: int, question_number: int, answer_text: str, is_correct: bool):
-        """Сохранение ответа на дополнительный вопрос о High Focus"""
+    async def save_complete_quiz(self, user_id: int, focus_type: str, answers: dict, 
+                                  highfocus_attempts: dict):
+        """
+        Сохранение полного прохождения квиза (все ответы в одной записи)
+        
+        Args:
+            user_id: ID пользователя
+            focus_type: Определенный тип мозга
+            answers: Словарь с ответами на все вопросы
+            highfocus_attempts: Словарь с количеством попыток на вопросы High Focus
+        """
         async with self.pool.acquire() as conn:
             await conn.execute("""
-                INSERT INTO highfocus_answers (user_id, question_number, answer_text, is_correct)
-                VALUES ($1, $2, $3, $4)
-            """, user_id, question_number, answer_text, is_correct)
+                INSERT INTO complete_quiz_answers (
+                    user_id, focus_type,
+                    q1_type, q1_text, q2_type, q2_text, q3_type, q3_text,
+                    q4_type, q4_text, q5_type, q5_text,
+                    highfocus_q1_text, highfocus_q1_correct, highfocus_q1_attempts,
+                    highfocus_q2_text, highfocus_q2_correct, highfocus_q2_attempts,
+                    highfocus_q3_text, highfocus_q3_correct, highfocus_q3_attempts
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+                        $13, $14, $15, $16, $17, $18, $19, $20, $21)
+            """,
+                user_id, focus_type,
+                answers.get('q1', {}).get('type'), answers.get('q1', {}).get('text'),
+                answers.get('q2', {}).get('type'), answers.get('q2', {}).get('text'),
+                answers.get('q3', {}).get('type'), answers.get('q3', {}).get('text'),
+                answers.get('q4', {}).get('type'), answers.get('q4', {}).get('text'),
+                answers.get('q5', {}).get('type'), answers.get('q5', {}).get('text'),
+                answers.get('highfocus_q1', {}).get('text'), 
+                answers.get('highfocus_q1', {}).get('is_correct'),
+                highfocus_attempts.get('q1', 1),
+                answers.get('highfocus_q2', {}).get('text'),
+                answers.get('highfocus_q2', {}).get('is_correct'),
+                highfocus_attempts.get('q2', 1),
+                answers.get('highfocus_q3', {}).get('text'),
+                answers.get('highfocus_q3', {}).get('is_correct'),
+                highfocus_attempts.get('q3', 1)
+            )
     
-    async def get_highfocus_answers(self, user_id: int):
-        """Получение ответов пользователя на вопросы High Focus"""
+    async def get_complete_quiz_by_user(self, user_id: int):
+        """Получение полных результатов квиза пользователя"""
         async with self.pool.acquire() as conn:
             return await conn.fetch("""
-                SELECT question_number, answer_text, is_correct, answered_at
-                FROM highfocus_answers
+                SELECT * FROM complete_quiz_answers
                 WHERE user_id = $1
-                ORDER BY answered_at DESC
+                ORDER BY completed_at DESC
             """, user_id)
 
     async def close(self):
