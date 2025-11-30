@@ -529,14 +529,27 @@ async def process_highfocus_q3(message: Message, state: FSMContext):
         await message.answer(HIGHFOCUS_CORRECT_Q3)
         await asyncio.sleep(1.5)
         
-        # Сохраняем ВСЕ ответы ТОЛЬКО в новую таблицу
+        # Сохраняем результаты в БД
         quiz_result = data.get("quiz_result")
-        await db.save_complete_quiz(
-            user_id=message.from_user.id,
-            focus_type=quiz_result,
-            answers=answers,
-            highfocus_wrong=highfocus_wrong
-        )
+        
+        try:
+            # Сначала сохраняем в старую таблицу для совместимости
+            await db.save_quiz_result(
+                user_id=message.from_user.id,
+                focus_type=quiz_result,
+                answers=answers
+            )
+            
+            # Затем пытаемся сохранить в новую таблицу
+            await db.save_complete_quiz(
+                user_id=message.from_user.id,
+                focus_type=quiz_result,
+                answers=answers,
+                highfocus_wrong=highfocus_wrong
+            )
+        except Exception as e:
+            # Логируем ошибку, но не падаем
+            logger.error(f"Ошибка сохранения в БД: {e}")
         
         # Сохраняем обновленные данные в state
         await state.update_data(answers=answers)
