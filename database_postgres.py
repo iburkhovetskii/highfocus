@@ -38,6 +38,19 @@ class Database:
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
             """)
+            
+            # Новая таблица для ответов на дополнительные вопросы о High Focus
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS highfocus_answers (
+                    id SERIAL PRIMARY KEY,
+                    user_id BIGINT,
+                    question_number INTEGER,
+                    answer_text TEXT,
+                    is_correct BOOLEAN,
+                    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+            """)
 
     async def add_user(self, user_id: int, username: str = None, first_name: str = None):
         """Добавление пользователя"""
@@ -74,6 +87,24 @@ class Database:
                 FROM quiz_results
                 GROUP BY focus_type
             """)
+    
+    async def save_highfocus_answer(self, user_id: int, question_number: int, answer_text: str, is_correct: bool):
+        """Сохранение ответа на дополнительный вопрос о High Focus"""
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO highfocus_answers (user_id, question_number, answer_text, is_correct)
+                VALUES ($1, $2, $3, $4)
+            """, user_id, question_number, answer_text, is_correct)
+    
+    async def get_highfocus_answers(self, user_id: int):
+        """Получение ответов пользователя на вопросы High Focus"""
+        async with self.pool.acquire() as conn:
+            return await conn.fetch("""
+                SELECT question_number, answer_text, is_correct, answered_at
+                FROM highfocus_answers
+                WHERE user_id = $1
+                ORDER BY answered_at DESC
+            """, user_id)
 
     async def close(self):
         """Закрытие пула соединений"""

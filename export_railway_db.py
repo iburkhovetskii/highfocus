@@ -39,6 +39,15 @@ async def export_to_csv():
         """)
         print(f"📊 Найдено результатов квизов: {len(results)}")
         
+        # Получаем все ответы на вопросы High Focus
+        highfocus_answers = await conn.fetch("""
+            SELECT ha.*, u.username, u.first_name
+            FROM highfocus_answers ha
+            LEFT JOIN users u ON ha.user_id = u.user_id
+            ORDER BY ha.answered_at DESC
+        """)
+        print(f"📊 Найдено ответов на вопросы High Focus: {len(highfocus_answers)}")
+        
         # Экспортируем пользователей
         if users:
             filename_users = f"railway_users_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
@@ -77,15 +86,14 @@ async def export_to_csv():
                     ])
             print(f"✅ Результаты квизов экспортированы в {filename_results}")
             
-            # Детальный экспорт с развёрнутыми ответами
+            # Детальный экспорт с развёрнутыми ответами (обновлено для 5 вопросов)
             filename_detailed = f"railway_quiz_detailed_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             with open(filename_detailed, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow([
-                    'id', 'user_id', 'username', 'first_name', 'focus_type', 'completed_at',
+                    'id', 'user_id', 'username', 'first_name', 'brain_type', 'completed_at',
                     'q1_type', 'q1_text', 'q2_type', 'q2_text', 'q3_type', 'q3_text',
-                    'q4_type', 'q4_text', 'q5_type', 'q5_text', 'q6_type', 'q6_text',
-                    'q7_text', 'q8_text'
+                    'q4_type', 'q4_text', 'q5_type', 'q5_text'
                 ])
                 for result in results:
                     answers = json.loads(result['answers']) if result['answers'] else {}
@@ -97,8 +105,8 @@ async def export_to_csv():
                         result['focus_type'],
                         result['completed_at']
                     ]
-                    # Добавляем ответы на вопросы 1-6
-                    for i in range(1, 7):
+                    # Добавляем ответы на вопросы 1-5
+                    for i in range(1, 6):
                         q_key = f'q{i}'
                         if q_key in answers and isinstance(answers[q_key], dict):
                             row.append(answers[q_key].get('type', ''))
@@ -106,15 +114,30 @@ async def export_to_csv():
                         else:
                             row.append('')
                             row.append('')
-                    # Добавляем ответы на вопросы 7-8 (только текст)
-                    for i in range(7, 9):
-                        q_key = f'q{i}'
-                        if q_key in answers and isinstance(answers[q_key], dict):
-                            row.append(answers[q_key].get('text', ''))
-                        else:
-                            row.append('')
                     writer.writerow(row)
             print(f"✅ Детальные результаты экспортированы в {filename_detailed}")
+        
+        # Экспортируем ответы на вопросы High Focus
+        if highfocus_answers:
+            filename_highfocus = f"railway_highfocus_answers_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            with open(filename_highfocus, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    'id', 'user_id', 'username', 'first_name', 'question_number',
+                    'answer_text', 'is_correct', 'answered_at'
+                ])
+                for answer in highfocus_answers:
+                    writer.writerow([
+                        answer['id'],
+                        answer['user_id'],
+                        answer['username'] or '',
+                        answer['first_name'] or '',
+                        answer['question_number'],
+                        answer['answer_text'],
+                        answer['is_correct'],
+                        answer['answered_at']
+                    ])
+            print(f"✅ Ответы на вопросы High Focus экспортированы в {filename_highfocus}")
         
         await conn.close()
         print("\n🎉 Экспорт завершён!")

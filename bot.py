@@ -446,12 +446,22 @@ async def process_highfocus_q1(message: Message, state: FSMContext):
     data = await state.get_data()
     answers = data.get("answers", {})
     
-    # Сохраняем ответ
-    answers["highfocus_q1"] = {"text": answer}
+    # Проверяем правильный ответ
+    is_correct = (answer == "🧠 Молочный напиток для концентрации и энергии на основе гуараны и L-теанина")
+    
+    # Сохраняем ответ в БД (все ответы, включая неправильные)
+    await db.save_highfocus_answer(
+        user_id=message.from_user.id,
+        question_number=1,
+        answer_text=answer,
+        is_correct=is_correct
+    )
+    
+    # Сохраняем ответ в state
+    answers["highfocus_q1"] = {"text": answer, "is_correct": is_correct}
     await state.update_data(answers=answers)
     
-    # Проверяем правильный ответ
-    if answer == "🧠 Молочный напиток для концентрации и энергии на основе гуараны и L-теанина":
+    if is_correct:
         await message.answer(HIGHFOCUS_CORRECT_Q1)
         await asyncio.sleep(1.5)
         
@@ -472,12 +482,22 @@ async def process_highfocus_q2(message: Message, state: FSMContext):
     data = await state.get_data()
     answers = data.get("answers", {})
     
-    # Сохраняем ответ
-    answers["highfocus_q2"] = {"text": answer}
+    # Проверяем правильный ответ
+    is_correct = (answer == "🧠 Чтобы поддерживать концентрацию, ясность и мягкий уровень энергии в течение дня")
+    
+    # Сохраняем ответ в БД
+    await db.save_highfocus_answer(
+        user_id=message.from_user.id,
+        question_number=2,
+        answer_text=answer,
+        is_correct=is_correct
+    )
+    
+    # Сохраняем ответ в state
+    answers["highfocus_q2"] = {"text": answer, "is_correct": is_correct}
     await state.update_data(answers=answers)
     
-    # Проверяем правильный ответ
-    if answer == "🧠 Чтобы поддерживать концентрацию, ясность и мягкий уровень энергии в течение дня":
+    if is_correct:
         await message.answer(HIGHFOCUS_CORRECT_Q2)
         await asyncio.sleep(1.5)
         
@@ -500,11 +520,21 @@ async def process_highfocus_q3(message: Message, state: FSMContext):
     data = await state.get_data()
     answers = data.get("answers", {})
     
-    # Сохраняем ответ
-    answers["highfocus_q3"] = {"text": answer}
-    
     # Проверяем правильный ответ
-    if answer == "📚 Когда нужно включить голову, сосредоточиться и работать внимательно":
+    is_correct = (answer == "📚 Когда нужно включить голову, сосредоточиться и работать внимательно")
+    
+    # Сохраняем ответ в БД
+    await db.save_highfocus_answer(
+        user_id=message.from_user.id,
+        question_number=3,
+        answer_text=answer,
+        is_correct=is_correct
+    )
+    
+    # Сохраняем ответ в state
+    answers["highfocus_q3"] = {"text": answer, "is_correct": is_correct}
+    
+    if is_correct:
         await message.answer(HIGHFOCUS_CORRECT_Q3)
         await asyncio.sleep(1.5)
         
