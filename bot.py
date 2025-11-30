@@ -539,6 +539,7 @@ async def process_highfocus_q3(message: Message, state: FSMContext):
                 focus_type=quiz_result,
                 answers=answers
             )
+            logger.info(f"Сохранено в quiz_results для user {message.from_user.id}")
             
             # Затем пытаемся сохранить в новую таблицу
             await db.save_complete_quiz(
@@ -547,9 +548,10 @@ async def process_highfocus_q3(message: Message, state: FSMContext):
                 answers=answers,
                 highfocus_wrong=highfocus_wrong
             )
+            logger.info(f"Сохранено в complete_quiz_answers для user {message.from_user.id}")
         except Exception as e:
             # Логируем ошибку, но не падаем
-            logger.error(f"Ошибка сохранения в БД: {e}")
+            logger.error(f"Ошибка сохранения в БД для user {message.from_user.id}: {e}", exc_info=True)
         
         # Сохраняем обновленные данные в state
         await state.update_data(answers=answers)
