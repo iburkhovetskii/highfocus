@@ -128,6 +128,17 @@ RESULTS = {
 💡 Рекомендуемый вкус: 🧃 Вне зависимости от вкуса, вам подойдёт любой High Focus — попробуйте все, чтобы выбрать свой идеальный баланс."""
 }
 
+# Карты изображений для типов фокуса
+RESULT_IMAGES = {
+    "compulsive": "Kompulsivny.png",
+    "anxious": "Trevojny.png",
+    "depressive": "Depressivny.png",
+    "impulsive": "Vspylchivy.png",
+    "hyperactive": "Impulsivny.png",
+    "cyclothymic": "Ciklotimny.png",
+    "balanced": "Sbalansirovanny.png",
+}
+
 SUBSCRIPTION_TEXT = """⚡️ Остался последний шаг — подпишись на наш Telegram-канал High Focus!
 
 Там — всё о концентрации, энергии и продуктивности: как оставаться в фокусе, когда мир шумит, и как прокачивать себя каждый день."""
@@ -574,7 +585,19 @@ async def already_subscribed(callback: CallbackQuery, state: FSMContext):
     if quiz_result:
         # Показываем результат квиза
         result_text = RESULTS[quiz_result]
-        await callback.message.answer(result_text)
+        image_path = RESULT_IMAGES.get(quiz_result)
+        
+        if image_path:
+            try:
+                await callback.message.answer_photo(
+                    photo=FSInputFile(image_path),
+                    caption=result_text
+                )
+            except Exception:
+                # Если не удалось отправить фото — шлём только текст
+                await callback.message.answer(result_text)
+        else:
+            await callback.message.answer(result_text)
     
     await callback.answer("Спасибо! 🎉")
     
