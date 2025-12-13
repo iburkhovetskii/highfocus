@@ -634,14 +634,19 @@ async def main():
         await db.init_db()
         logger.info("База данных PostgreSQL инициализирована")
         
-        # Загрузка промокодов
-        await load_promo_codes()
+        # Загрузка промокодов (не критично, если не получится)
+        logger.info("Начинаю загрузку промокодов...")
+        try:
+            await load_promo_codes()
+            logger.info("Промокоды загружены успешно")
+        except Exception as e:
+            logger.error(f"Ошибка загрузки промокодов (продолжаю работу): {e}", exc_info=True)
         
         # Запуск бота
-        logger.info("Бот запущен")
+        logger.info("Запускаю бота...")
         await dp.start_polling(bot)
     except Exception as e:
-        logger.error(f"Ошибка запуска: {e}")
+        logger.error(f"Критическая ошибка запуска: {e}", exc_info=True)
     finally:
         await db.close()
 
