@@ -246,11 +246,16 @@ PROMO_EXHAUSTED_MESSAGE = """🎉 Поздравляем! Ты прошёл кв
 async def load_promo_codes():
     """Загрузка промокодов из CSV файла в БД"""
     promo_file = "promo_codes.csv"
-    if os.path.exists(promo_file):
-        with open(promo_file, "r") as f:
-            codes = [line.strip() for line in f if line.strip()]
-        await db.load_promo_codes_from_list(codes)
-        logger.info(f"Загружено {len(codes)} промокодов из {promo_file}")
+    try:
+        if os.path.exists(promo_file):
+            with open(promo_file, "r") as f:
+                codes = [line.strip() for line in f if line.strip()]
+            await db.load_promo_codes_from_list(codes)
+            logger.info(f"Загружено {len(codes)} промокодов из {promo_file}")
+        else:
+            logger.warning(f"Файл промокодов {promo_file} не найден")
+    except Exception as e:
+        logger.error(f"Ошибка загрузки промокодов: {e}", exc_info=True)
 
 
 # ========== ОБРАБОТЧИКИ ==========
