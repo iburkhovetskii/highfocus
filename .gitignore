@@ -15,6 +15,7 @@ logs/
 
 # Exports
 *.csv
+!promo_codes.csv
 docs/*.csv
 
 # macOS
