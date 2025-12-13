@@ -76,6 +76,28 @@ class Database:
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
             """)
+            
+            # Таблица промокодов
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS promo_codes (
+                    id SERIAL PRIMARY KEY,
+                    code TEXT UNIQUE NOT NULL,
+                    user_id BIGINT,
+                    used_at TIMESTAMP,
+                    is_used BOOLEAN DEFAULT FALSE
+                )
+            """)
+            
+            # Таблица для отслеживания выданных промокодов пользователям
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS user_promo_codes (
+                    id SERIAL PRIMARY KEY,
+                    user_id BIGINT NOT NULL,
+                    promo_code TEXT NOT NULL,
+                    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id)
+                )
+            """)
 
     async def add_user(self, user_id: int, username: str = None, first_name: str = None):
         """Добавление пользователя"""
@@ -162,6 +184,84 @@ class Database:
                 WHERE user_id = $1
                 ORDER BY completed_at DESC
             """, user_id)
+
+    # ===== Методы для работы с промокодами =====
+    
+    async def load_promo_codes_from_list(self, codes: list):
+        """Загрузка промокодов из списка в БД (пропускает уже существующие)"""
+        async with self.pool.acquire() as conn:
+            for code in codes:
+                code = code.strip()
+                if code:
+                    await conn.execute("""
+                        INSERT INTO promo_codes (code, is_used)
+                        VALUES ($1, FALSE)
+                        ON CONFLICT (code) DO NOTHING
+                    """, code)
+    
+    async def get_user_promo_code(self, user_id: int) -> str | None:
+        """Получить промокод, который уже был выдан пользователю"""
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow("""
+                SELECT promo_code FROM user_promo_codes
+                WHERE user_id = $1
+            """, user_id)
+            return row['promo_code'] if row else None
+    
+    async def assign_promo_code_to_user(self, user_id: int) -> str | None:
+        """
+        Выдать уникальный промокод пользователю.
+        Если пользователь уже получал промокод — вернуть его.
+        Если свободных промокодов нет — вернуть None.
+        """
+        async with self.pool.acquire() as conn:
+            # Проверяем, есть ли уже промокод у пользователя
+            existing = await conn.fetchrow("""
+                SELECT promo_code FROM user_promo_codes
+                WHERE user_id = $1
+            """, user_id)
+            
+            if existing:
+                return existing['promo_code']
+            
+            # Берём первый свободный промокод и блокируем его
+            async with conn.transaction():
+                row = await conn.fetchrow("""
+                    SELECT id, code FROM promo_codes
+                    WHERE is_used = FALSE
+                    ORDER BY id
+                    LIMIT 1
+                    FOR UPDATE SKIP LOCKED
+                """)
+                
+                if not row:
+                    return None  # Нет свободных промокодов
+                
+                promo_code = row['code']
+                promo_id = row['id']
+                
+                # Помечаем промокод как использованный
+                await conn.execute("""
+                    UPDATE promo_codes
+                    SET is_used = TRUE, user_id = $1, used_at = CURRENT_TIMESTAMP
+                    WHERE id = $2
+                """, user_id, promo_id)
+                
+                # Сохраняем связь пользователь-промокод
+                await conn.execute("""
+                    INSERT INTO user_promo_codes (user_id, promo_code)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id) DO NOTHING
+                """, user_id, promo_code)
+                
+                return promo_code
+    
+    async def get_promo_stats(self):
+        """Статистика по промокодам"""
+        async with self.pool.acquire() as conn:
+            total = await conn.fetchval("SELECT COUNT(*) FROM promo_codes")
+            used = await conn.fetchval("SELECT COUNT(*) FROM promo_codes WHERE is_used = TRUE")
+            return {"total": total, "used": used, "available": total - used}
 
     async def close(self):
         """Закрытие пула соединений"""
