@@ -189,15 +189,23 @@ class Database:
     
     async def load_promo_codes_from_list(self, codes: list):
         """Загрузка промокодов из списка в БД (пропускает уже существующие)"""
+        if not codes:
+            return
+        
         async with self.pool.acquire() as conn:
-            for code in codes:
-                code = code.strip()
-                if code:
-                    await conn.execute("""
-                        INSERT INTO promo_codes (code, is_used)
-                        VALUES ($1, FALSE)
-                        ON CONFLICT (code) DO NOTHING
-                    """, code)
+            # Проверяем, сколько уже есть промокодов
+            existing_count = await conn.fetchval("SELECT COUNT(*) FROM promo_codes")
+            if existing_count > 0:
+                # Промокоды уже загружены
+                return
+            
+            # Batch insert всех промокодов за один запрос
+            values = [(code.strip(),) for code in codes if code.strip()]
+            await conn.executemany("""
+                INSERT INTO promo_codes (code, is_used)
+                VALUES ($1, FALSE)
+                ON CONFLICT (code) DO NOTHING
+            """, values)
     
     async def get_user_promo_code(self, user_id: int) -> str | None:
         """Получить промокод, который уже был выдан пользователю"""
